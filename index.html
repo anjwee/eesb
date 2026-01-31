@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coral Public Welfare</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 30px;
+            height: 100vh;
+            box-sizing: border-box;
+            
+            /* --- 背景设置：使用 PNG 图片 --- */
+            background-color: #001e3c; 
+            background-image: 
+                /* 淡淡的蓝色滤镜，增加深邃感 */
+                linear-gradient(rgba(0, 30, 66, 0.01), rgba(0, 11, 26, 0.01)),
+                /* 关键点：这里后缀改为 .png */
+                url('./bg.png'); 
+            
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            
+            font-family: "SF Pro Text", "PingFang SC", sans-serif;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+
+        /* --- 毛玻璃小贴士样式 --- */
+        .glass-tip {
+            max-width: 280px;
+            padding: 20px 25px;
+            background: rgba(0, 20, 40, 0.5); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .tip-title { font-size: 15px; font-weight: bold; color: #4fc3f7; margin-bottom: 8px; display: flex; align-items: center; }
+        .system-status { margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); font-size: 10px; opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <div class="glass-tip">
+        <div class="tip-title">🐠 Coral Public Welfare</div>
+        <p>What you are observing is a close-up view of a coral community. Behind the vibrant colors lies the diligent work of billions of coral polyps, which together form one of the most vibrant homes in the ocean.</p>
+        <div class="system-status">
+            ● The deep-sea tunnel has been connected<br>
+            Protect the environment
+        </div>
+    </div>
+</body>
+</html>
