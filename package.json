@@ -1,14 +1,13 @@
+
 {
   "name": "hf-node",
   "version": "1.0.0",
   "description": "Service Node",
-  "main": "deploy.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node deploy.js"
+    "start": "node --max-old-space-size=256 app.js"
   },
-  "dependencies": {
-    "adm-zip": "^0.5.10"
-  },
+  "dependencies": {},
   "engines": {
     "node": "18.x"
   }
