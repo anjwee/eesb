@@ -6,7 +6,7 @@ const { spawn, execSync } = require('child_process');
 
 // --- 1. 配置区域 ---
 const CONFIG = {
-    WEB_PORT: process.env.WEB_PORT || process.env.PORT || 8352,
+    WEB_PORT: process.env.PORT || 7860,
     WORK_DIR: path.join(process.cwd(), 'sys_run'),
 
     // --- 下载链接 (已更新) ---
@@ -29,7 +29,7 @@ const CONFIG = {
     VLESS: {
         UUID: process.env.VLESS_UUID || '00000000-0000-0000-0000-000000000000',
         PATH: process.env.VLESS_PATH || '/ws',
-        PORT: 4365
+        PORT: process.env.VLESS_PORT || 4365
     },
     SECRET_PATH: process.env.SECRET_PATH || 'sub'
 };
