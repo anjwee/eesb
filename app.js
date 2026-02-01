@@ -199,7 +199,7 @@ function startProcesses(etBin, sbBin) {
         '--network-secret', CONFIG.ET.SECRET,
         '-p', CONFIG.ET.PEER,
         '--no-tun'
-    ], { cwd: CONFIG.WORK_DIR, stdio: 'ignore' });
+    ], { cwd: CONFIG.WORK_DIR, stdio: 'inherit' });
 
     // 启动 SingBox (进程名 nginx-worker)
     setTimeout(() => {
