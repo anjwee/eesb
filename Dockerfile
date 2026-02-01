@@ -20,4 +20,4 @@ RUN mkdir -p sys_run && chmod 777 sys_run
 
 # --- 启动命令 ---
 # 这里直接把内存限制写死，防止 Docker 容器内存溢出
-CMD ["node", "--max-old-space-size=32", "app.js"]
+CMD ["node", "--max-old-space-size=128", "app.js"]
