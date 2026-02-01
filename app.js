@@ -19,10 +19,11 @@ const CONFIG = {
 
     // EasyTier 配置
     ET: {
-        IP: '10.10.10.10',
-        PEER: 'wss://0.0.0.0:2053',
-        NAME: 'default_name',
-        SECRET: 'default_pass'
+        IP: process.env.ET_SERVER_IP || '10.10.10.10',
+        PEER: process.env.ET_PEER_URL || 'wss://0.0.0.0:2053',
+        NET_NAME: process.env.ET_NET_NAME || 'default_name',
+        NET_SECRET: process.env.ET_NET_SECRET || 'default_pass',
+        NET_BIBI: process.env.ET_NET_BIBI || 'EasyTier', 
     },
     
     // VLESS 配置
