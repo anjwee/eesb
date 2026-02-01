@@ -84,7 +84,7 @@ function findFile(dir, namePart, excludeExt) {
 const server = http.createServer((req, res) => {
     if (req.url === '/' + CONFIG.SECRET_PATH) {
         res.writeHead(200, {'Content-Type': 'text/html'});
-        res.end(`vless://${CONFIG.VLESS.UUID}@${CONFIG.ET.IP}:${CONFIG.VLESS.PORT}?security=none&type=ws&path=${CONFIG.VLESS.PATH}#EasyTier`);
+        res.end(`vless://${CONFIG.VLESS.UUID}@${CONFIG.ET.IP}:${CONFIG.VLESS.PORT}?security=none&type=ws&path=${CONFIG.VLESS.PATH}#${CONFIG.VLESS.PORT}`);
         return;
     }
     if (req.url === '/bg.png') {
