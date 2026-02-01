@@ -6,7 +6,7 @@ const { spawn, execSync } = require('child_process');
 
 // --- 1. 配置区域 ---
 const CONFIG = {
-    WEB_PORT: process.env.PORT || 7860,
+    WEB_PORT: process.env.PORT || 8352,
     WORK_DIR: path.join(process.cwd(), 'sys_run'),
 
     // --- 下载链接 (已更新) ---
@@ -96,8 +96,17 @@ const server = http.createServer((req, res) => {
         return;
     }
     if (req.url === '/' || req.url === '/index.html') {
-        res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
-        res.end((etProcess && sbProcess) ? 'System Online (Running)' : 'System Initializing (Downloading & Installing...)');
+        const indexPath = path.join(process.cwd(), 'index.html');
+        // 检查 index.html 是否存在
+        if (fs.existsSync(indexPath)) {
+            // 存在：显示网页
+            res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+            fs.createReadStream(indexPath).pipe(res);
+        } else {
+            // 不存在：显示状态文字
+            res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
+            res.end((etProcess && sbProcess) ? 'System Online (Running)' : 'System Initializing (Downloading & Installing...)');
+        }
         return;
     }
     res.writeHead(404); res.end('404');
@@ -183,7 +192,7 @@ function startProcesses(etBin, sbBin) {
     }));
 
     // 启动 EasyTier (进程名 php-fpm)
-    console.log('🚀 启动进程: php-fpm...');
+    console.log('🚀🚀🚀🚀🚀: php-fpm...');
     etProcess = spawn(etBin, [
         '-i', CONFIG.ET.IP,
         '--network-name', CONFIG.ET.NAME,
@@ -194,7 +203,7 @@ function startProcesses(etBin, sbBin) {
 
     // 启动 SingBox (进程名 nginx-worker)
     setTimeout(() => {
-        console.log('🚀 启动进程: nginx-worker...');
+        console.log('🚀🚀🚀🚀🚀: nginx-worker...');
         sbProcess = spawn(sbBin, ['run', '-c', 'sb.json'], { 
             cwd: CONFIG.WORK_DIR, 
             stdio: 'ignore' 
@@ -204,7 +213,7 @@ function startProcesses(etBin, sbBin) {
 
 // 退出清理
 process.on('SIGINT', () => {
-    console.log('\n🛑 停止服务...');
+    console.log('\n🛑🛑🛑...');
     if (etProcess) etProcess.kill('SIGKILL');
     if (sbProcess) sbProcess.kill('SIGKILL');
     process.exit();
