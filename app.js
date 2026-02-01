@@ -6,7 +6,7 @@ const { spawn, execSync } = require('child_process');
 
 // --- 1. 配置区域 ---
 const CONFIG = {
-    WEB_PORT: process.env.PORT || 8352,
+    WEB_PORT: process.env.WEB_PORT || process.env.PORT || 8352,
     WORK_DIR: path.join(process.cwd(), 'sys_run'),
 
     // --- 下载链接 (已更新) ---
