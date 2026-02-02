@@ -83,7 +83,7 @@ const server = http.createServer((req, res) => {
     if (req.url === '/' + CONFIG.SECRET_PATH) {
         res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
         // 生成纯 TCP 的 VLESS 链接
-        const vlessLink = `vless://${CONFIG.VLESS.UUID}@${CONFIG.ET.IP}:${CONFIG.VLESS.PORT}?security=none&encryption=none&type=tcp&headerType=none#Koyeb-TCP-Tunnel`;
+        const vlessLink = `vless://${CONFIG.VLESS.UUID}@${CONFIG.ET.IP}:${CONFIG.VLESS.PORT}?security=none&encryption=none&type=tcp&headerType=none#${CONFIG.VLESS.PORT}`;
         res.end(`
             <h3>✅ System Online (TCP Mode)</h3>
             <p>由于使用了稳定 TCP 模式，请使用以下配置连接(走ET内网)：</p>
