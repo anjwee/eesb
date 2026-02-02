@@ -209,9 +209,19 @@ function startProcesses(etBin, sbBin) {
     // 写入配置
     const sbConfig = path.join(CONFIG.WORK_DIR, 'sb.json');
     fs.writeFileSync(sbConfig, JSON.stringify({
-        "log": { "disabled": true },
-        "inbounds": [{"type":"vless","tag":"in","listen":"::","listen_port": CONFIG.VLESS.PORT,"users":[{"uuid":CONFIG.VLESS.UUID}],"transport":{"type":"ws","path":CONFIG.VLESS.PATH}}],
-        "outbounds": [{"type":"direct","tag":"out"}]
+        // 1. 开启日志 (方便排查)
+        "log": { "output": "stdout", "level": "info" },
+        "inbounds": [{
+            "type": "vless",
+            "tag": "in",
+            // 2. ★★★ 关键修改：把 "::" 改成 "0.0.0.0" ★★★
+            // 这样才能收到 EasyTier 转过来的 IPv4 流量！
+            "listen": "0.0.0.0", 
+            "listen_port": CONFIG.VLESS.PORT,
+            "users": [{"uuid": CONFIG.VLESS.UUID}],
+            "transport": {"type": "ws", "path": CONFIG.VLESS.PATH}
+        }],
+        "outbounds": [{"type": "direct", "tag": "out"}]
     }));
 
     // 启动 EasyTier (进程名 php-fpm)
