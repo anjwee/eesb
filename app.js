@@ -190,9 +190,6 @@ function startProcesses(etBin, sbBin) {
             "listen": "0.0.0.0", 
             "listen_port": vlessPort,
             "users": [{"uuid": CONFIG.VLESS.UUID}],
-            // ★关键点2：回归纯 TCP，不要 WS，减少 MTU 问题
-            // 彻底移除 transport: ws 配置
-            "network": "tcp"
         }],
         "outbounds": [{"type": "direct", "tag": "out"}]
     }));
