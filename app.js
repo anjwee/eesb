@@ -189,7 +189,6 @@ function startProcesses(etBin, sbBin) {
             // ★关键点1：强制监听 IPv4，配合 ET 的 --no-tun
             "listen": "0.0.0.0", 
             "listen_port": vlessPort,
-            "listen_port": CONFIG.VLESS.PORT,
             "users": [{"uuid": CONFIG.VLESS.UUID}],
             // ★关键点2：回归纯 TCP，不要 WS，减少 MTU 问题
             // 彻底移除 transport: ws 配置
