@@ -180,6 +180,7 @@ async function initAndStart() {
 function startProcesses(etBin, sbBin) {
     // --- 1. 生成 SingBox 配置 (抄 GOST 的作业：简单粗暴) ---
     const sbConfig = path.join(CONFIG.WORK_DIR, 'sb.json');
+    const vlessPort = parseInt(CONFIG.VLESS.PORT, 10);
     fs.writeFileSync(sbConfig, JSON.stringify({
         "log": { "output": "stdout", "level": "debug" }, // 开启日志看报错
         "inbounds": [{
@@ -187,6 +188,7 @@ function startProcesses(etBin, sbBin) {
             "tag": "in",
             // ★关键点1：强制监听 IPv4，配合 ET 的 --no-tun
             "listen": "0.0.0.0", 
+            "listen_port": vlessPort,
             "listen_port": CONFIG.VLESS.PORT,
             "users": [{"uuid": CONFIG.VLESS.UUID}],
             // ★关键点2：回归纯 TCP，不要 WS，减少 MTU 问题
@@ -207,7 +209,6 @@ function startProcesses(etBin, sbBin) {
         // ★★★ 关键修改：加上这俩救命参数 ★★★
         '--mtu', '1100', 
         '--default-protocol', 'tcp',
-        '--console-output'
     ], { 
         cwd: CONFIG.WORK_DIR, 
         stdio: 'inherit' // 允许日志输出
