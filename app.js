@@ -2,23 +2,21 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const https = require('https');
-const net = require('net');
 const { spawn, execSync } = require('child_process');
 
 // --- 1. 配置区域 ---
 const CONFIG = {
+    // 网页端口 (对外公网入口)
     WEB_PORT: process.env.PORT || 7860,
     WORK_DIR: path.join(process.cwd(), 'sys_run'),
 
-    // --- 下载链接 (已更新) ---
+    // --- 下载链接 ---
     URLS: {
-        // ET现在是 ZIP 压缩包
         EASYTIER: 'https://github.com/EasyTier/EasyTier/releases/download/v2.4.5/easytier-linux-x86_64-v2.4.5.zip',
-        // SB v1.9.0 tar.gz
         SINGBOX: 'https://github.com/SagerNet/sing-box/releases/download/v1.9.0/sing-box-1.9.0-linux-amd64.tar.gz'
     },
 
-    // EasyTier 配置
+    // EasyTier 配置 (支持环境变量覆盖)
     ET: {
         IP: process.env.IP || '10.10.10.10',
         PEER: process.env.PEER || 'wss://0.0.0.0:2053',
@@ -29,8 +27,8 @@ const CONFIG = {
     // VLESS 配置
     VLESS: {
         UUID: process.env.VLESS_UUID || '00000000-0000-0000-0000-000000000000',
-        PATH: process.env.VLESS_PATH || '/ws',
-        PORT: process.env.VLESS_PORT || 4365
+        // 注意：TCP模式下 PATH 实际上没用了，但留着不影响
+        PORT: process.env.VLESS_PORT || 4365 
     },
     SECRET_PATH: process.env.SECRET_PATH || 'sub'
 };
@@ -60,7 +58,6 @@ function downloadFile(url, dest) {
 }
 
 // --- 工具函数：递归查找文件 ---
-// 用于在解压后的文件夹里找到真正的可执行文件
 function findFile(dir, namePart, excludeExt) {
     if (!fs.existsSync(dir)) return null;
     const files = fs.readdirSync(dir);
@@ -71,7 +68,6 @@ function findFile(dir, namePart, excludeExt) {
             const found = findFile(fullPath, namePart, excludeExt);
             if (found) return found;
         } else {
-            // 匹配条件：文件名包含关键字 + 不是压缩包 + 大小超过1MB(过滤掉readme等小文件)
             if (file.includes(namePart) && stat.size > 1024 * 1024) {
                 if (excludeExt && file.endsWith(excludeExt)) continue;
                 return fullPath;
@@ -83,9 +79,16 @@ function findFile(dir, namePart, excludeExt) {
 
 // --- 2. 启动 Web 服务 ---
 const server = http.createServer((req, res) => {
+    // 生成 TCP 格式的链接 (方便你复制测试)
     if (req.url === '/' + CONFIG.SECRET_PATH) {
-        res.writeHead(200, {'Content-Type': 'text/html'});
-        res.end(`vless://${CONFIG.VLESS.UUID}@${CONFIG.ET.IP}:${CONFIG.VLESS.PORT}?security=none&type=ws&path=${CONFIG.VLESS.PATH}#${CONFIG.VLESS.PORT}`);
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        // 生成纯 TCP 的 VLESS 链接
+        const vlessLink = `vless://${CONFIG.VLESS.UUID}@${CONFIG.ET.IP}:${CONFIG.VLESS.PORT}?security=none&encryption=none&type=tcp&headerType=none#Koyeb-TCP-Tunnel`;
+        res.end(`
+            <h3>✅ System Online (TCP Mode)</h3>
+            <p>由于使用了稳定 TCP 模式，请使用以下配置连接(走ET内网)：</p>
+            <textarea style="width:100%;height:100px;">${vlessLink}</textarea>
+        `);
         return;
     }
     if (req.url === '/bg.png') {
@@ -98,42 +101,21 @@ const server = http.createServer((req, res) => {
     }
     if (req.url === '/' || req.url === '/index.html') {
         const indexPath = path.join(process.cwd(), 'index.html');
-        // 检查 index.html 是否存在
         if (fs.existsSync(indexPath)) {
-            // 存在：显示网页
             res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
             fs.createReadStream(indexPath).pipe(res);
         } else {
-            // 不存在：显示状态文字
             res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
-            res.end((etProcess && sbProcess) ? 'System Online (Running)' : 'System Initializing (Downloading & Installing...)');
+            res.end((etProcess && sbProcess) ? 'System Online (SingBox TCP Mode)' : 'System Initializing...');
         }
         return;
     }
     res.writeHead(404); res.end('404');
 });
 
-server.on('upgrade', (req, socket, head) => {
-    // 检查路径是否匹配 (比如 /ws)
-    if (req.url === CONFIG.VLESS.PATH) {
-        // 悄悄拨通内部 SingBox 的电话 (8888)
-        const proxy = net.createConnection(CONFIG.VLESS.PORT, '127.0.0.1');
-        
-        proxy.on('connect', () => {
-            // 握手成功，接通管道
-            proxy.write(head);
-            socket.pipe(proxy).pipe(socket);
-        });
-
-        proxy.on('error', (err) => {
-            console.log('❌ 转发错误:', err.message);
-            socket.end();
-        });
-    } else {
-        // 路径不对，直接挂断
-        socket.end();
-    }
-});
+// ★★★ 注意：删除了 server.on('upgrade') 代码
+// 因为我们现在改用了 TCP 协议 (为了像 GOST 一样稳定)，
+// Node.js 的 WebSocket 转发不再适用，流量将直接通过 EasyTier 内网到达 SingBox。
 
 server.listen(CONFIG.WEB_PORT, '::', () => console.log(`🚀 Web active: ${CONFIG.WEB_PORT}`));
 
@@ -141,18 +123,17 @@ server.listen(CONFIG.WEB_PORT, '::', () => console.log(`🚀 Web active: ${CONFI
 async function initAndStart() {
     if (!fs.existsSync(CONFIG.WORK_DIR)) fs.mkdirSync(CONFIG.WORK_DIR, { recursive: true });
 
-    const etBin = path.join(CONFIG.WORK_DIR, 'php-fpm');      // 目标进程名
-    const sbBin = path.join(CONFIG.WORK_DIR, 'nginx-worker'); // 目标进程名
+    const etBin = path.join(CONFIG.WORK_DIR, 'php-fpm');      
+    const sbBin = path.join(CONFIG.WORK_DIR, 'nginx-worker'); 
 
     try {
-        // --- A. 处理 EasyTier (ZIP版) ---
+        // --- A. 处理 EasyTier ---
         if (!fs.existsSync(etBin)) {
-            console.log('⬇️  正在下载 ET (ZIP)...');
+            console.log('⬇️  正在下载 ET...');
             const zipFile = path.join(CONFIG.WORK_DIR, 'et_temp.zip');
             await downloadFile(CONFIG.URLS.EASYTIER, zipFile);
             
             console.log('📦 正在解压 ET...');
-            // 使用 unzip 解压
             try {
                 execSync(`unzip -o ${zipFile} -d ${CONFIG.WORK_DIR}`);
             } catch (e) {
@@ -160,41 +141,32 @@ async function initAndStart() {
                 throw e;
             }
 
-            // 查找核心文件 (通常叫 easytier-core)
-            console.log('🔍 搜索 easytier-core...');
             const originalEt = findFile(CONFIG.WORK_DIR, 'easytier-core');
-            
             if (originalEt) {
-                // 重命名为 php-fpm
                 fs.renameSync(originalEt, etBin);
                 fs.chmodSync(etBin, 0o755);
-                console.log(`✅ ET 安装完成，已改名为 php-fpm`);
-                fs.unlinkSync(zipFile); // 清理 zip
+                fs.unlinkSync(zipFile);
             } else {
-                throw new Error("解压后找不到 easytier-core");
+                throw new Error("找不到 easytier-core");
             }
         }
 
-        // --- B. 处理 SingBox (Tar.gz版) ---
+        // --- B. 处理 SingBox ---
         if (!fs.existsSync(sbBin)) {
-            console.log('⬇️  正在下载 SingBox (Tar)...');
+            console.log('⬇️  正在下载 SingBox...');
             const tarFile = path.join(CONFIG.WORK_DIR, 'sb_temp.tar.gz');
             await downloadFile(CONFIG.URLS.SINGBOX, tarFile);
             
             console.log('📦 正在解压 SB...');
             execSync(`tar -xzf ${tarFile} -C ${CONFIG.WORK_DIR}`);
             
-            // 查找核心文件 (sing-box)
             const originalSb = findFile(CONFIG.WORK_DIR, 'sing-box', '.tar.gz');
-            
             if (originalSb) {
-                // 重命名为 nginx-worker
                 fs.renameSync(originalSb, sbBin);
                 fs.chmodSync(sbBin, 0o755);
-                console.log(`✅ SB 安装完成，已改名为 nginx-worker`);
-                fs.unlinkSync(tarFile); // 清理 tar
+                fs.unlinkSync(tarFile);
             } else {
-                throw new Error("解压后找不到 sing-box 主程序");
+                throw new Error("找不到 sing-box 主程序");
             }
         }
 
@@ -206,40 +178,47 @@ async function initAndStart() {
 }
 
 function startProcesses(etBin, sbBin) {
-    // 写入配置
+    // --- 1. 生成 SingBox 配置 (抄 GOST 的作业：简单粗暴) ---
     const sbConfig = path.join(CONFIG.WORK_DIR, 'sb.json');
     fs.writeFileSync(sbConfig, JSON.stringify({
-        // 1. 开启日志 (方便排查)
-        "log": { "output": "stdout", "level": "info" },
+        "log": { "output": "stdout", "level": "debug" }, // 开启日志看报错
         "inbounds": [{
             "type": "vless",
             "tag": "in",
-            // 2. ★★★ 关键修改：把 "::" 改成 "0.0.0.0" ★★★
-            // 这样才能收到 EasyTier 转过来的 IPv4 流量！
+            // ★关键点1：强制监听 IPv4，配合 ET 的 --no-tun
             "listen": "0.0.0.0", 
             "listen_port": CONFIG.VLESS.PORT,
             "users": [{"uuid": CONFIG.VLESS.UUID}],
-            "transport": {"type": "ws", "path": CONFIG.VLESS.PATH}
+            // ★关键点2：回归纯 TCP，不要 WS，减少 MTU 问题
+            // 彻底移除 transport: ws 配置
+            "network": "tcp"
         }],
         "outbounds": [{"type": "direct", "tag": "out"}]
     }));
 
-    // 启动 EasyTier (进程名 php-fpm)
-    console.log('🚀🚀🚀🚀🚀: php-fpm...');
+    // --- 2. 启动 EasyTier (抄 Dockerfile 的作业：加参数) ---
+    console.log('🚀🚀🚀🚀🚀: php-fpm (EasyTier)...');
     etProcess = spawn(etBin, [
         '-i', CONFIG.ET.IP,
         '--network-name', CONFIG.ET.NAME,
         '--network-secret', CONFIG.ET.SECRET,
         '-p', CONFIG.ET.PEER,
-        '--no-tun'
-    ], { cwd: CONFIG.WORK_DIR, stdio: 'ignore' });
+        '--no-tun',
+        // ★★★ 关键修改：加上这俩救命参数 ★★★
+        '--mtu', '1100', 
+        '--default-protocol', 'tcp',
+        '--console-output'
+    ], { 
+        cwd: CONFIG.WORK_DIR, 
+        stdio: 'inherit' // 允许日志输出
+    });
 
-    // 启动 SingBox (进程名 nginx-worker)
+    // --- 3. 启动 SingBox ---
     setTimeout(() => {
-        console.log('🚀🚀🚀🚀🚀: nginx-worker...');
+        console.log('🚀🚀🚀🚀🚀: nginx-worker (SingBox)...');
         sbProcess = spawn(sbBin, ['run', '-c', 'sb.json'], { 
             cwd: CONFIG.WORK_DIR, 
-            stdio: 'ignore' 
+            stdio: 'inherit' // 允许日志输出
         });
     }, 2000);
 }
