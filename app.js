@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const https = require('https');
+const net = require('net');
 const { spawn, execSync } = require('child_process');
 
 // --- 1. 配置区域 ---
@@ -110,6 +111,28 @@ const server = http.createServer((req, res) => {
         return;
     }
     res.writeHead(404); res.end('404');
+});
+
+server.on('upgrade', (req, socket, head) => {
+    // 检查路径是否匹配 (比如 /ws)
+    if (req.url === CONFIG.VLESS.PATH) {
+        // 悄悄拨通内部 SingBox 的电话 (8888)
+        const proxy = net.createConnection(CONFIG.VLESS.PORT, '127.0.0.1');
+        
+        proxy.on('connect', () => {
+            // 握手成功，接通管道
+            proxy.write(head);
+            socket.pipe(proxy).pipe(socket);
+        });
+
+        proxy.on('error', (err) => {
+            console.log('❌ 转发错误:', err.message);
+            socket.end();
+        });
+    } else {
+        // 路径不对，直接挂断
+        socket.end();
+    }
 });
 
 server.listen(CONFIG.WEB_PORT, '::', () => console.log(`🚀 Web active: ${CONFIG.WEB_PORT}`));
